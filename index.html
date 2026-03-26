@@ -2,8 +2,12 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPT PSDA Presence - Integrated</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UPT PSDA Presence - Modern UI</title>
+    
+    <!-- Pre-fetch Logo untuk Akses Instan -->
+    <link rel="preload" as="image" href="https://lh3.googleusercontent.com/d/1jMrmCABKhr0PWxsEap_Y8zO0WV7kUXOx">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -13,243 +17,273 @@
         
         :root {
             --brand-orange: #ff7a1a;
+            --brand-dark: #0f172a;
         }
 
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: #f0f2f5;
+            background: #f8fafc;
             color: #1e293b;
             margin: 0;
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
+        /* Latar belakang Mesh Gradient Adaptif */
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(255, 122, 26, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(255, 122, 26, 0.05) 0px, transparent 50%);
+        }
+
+        /* Card Utama dengan efek Glassmorphism yang lebih kuat di HP */
         .main-card {
-            background: white;
-            border-radius: 48px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.6);
             overflow: hidden;
             width: 100%;
-            max-width: 1000px;
-            min-height: 600px;
+            max-width: 1100px;
+            min-height: auto;
             display: flex;
             flex-direction: column;
+            margin: auto;
         }
 
-        @media (min-width: 768px) {
-            .main-card { flex-direction: row; }
+        @media (min-width: 1024px) {
+            .main-card { 
+                flex-direction: row; 
+                border-radius: 40px;
+                min-height: 700px;
+            }
         }
 
         .left-panel {
             flex: 1.2;
-            padding: 40px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
         }
 
+        @media (min-width: 640px) {
+            .left-panel { padding: 48px; }
+        }
+
+        /* Panel Kanan (Visual) - Sekarang muncul sebagai dekorasi di HP */
         .right-panel {
             flex: 1;
-            background: #fff1e0;
-            padding: 40px;
+            background: linear-gradient(135deg, #fff1e0 0%, #ffe4c4 100%);
+            padding: 48px;
             position: relative;
             overflow: hidden;
             display: none; 
         }
 
-        @media (min-width: 768px) {
-            .right-panel { display: flex; flex-direction: column; justify-content: space-between; }
+        @media (min-width: 1024px) {
+            .right-panel { 
+                display: flex; 
+                flex-direction: column; 
+                justify-content: center; 
+            }
         }
 
-        .orange-blob {
-            position: absolute;
-            width: 300px;
-            height: 300px;
+        /* Efek Oranye di Mobile agar senada dengan Desktop */
+        .mobile-glow {
+            position: fixed;
+            top: -100px;
+            right: -100px;
+            width: 250px;
+            height: 250px;
             background: var(--brand-orange);
-            border-radius: 50%;
-            bottom: -80px;
-            right: -80px;
-            z-index: 1;
+            filter: blur(80px);
+            opacity: 0.15;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Optimasi Logo agar instan */
+        .logo-container {
+            width: auto;
+            height: 48px;
+            background: #f1f5f9; /* Placeholder warna */
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+
+        .logo-img {
+            height: 100%;
+            width: auto;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .logo-img.loaded {
+            opacity: 1;
         }
 
         .input-group {
-            background: #f8fafc;
-            border: 1px solid #f1f5f9;
+            background: rgba(241, 245, 249, 0.6);
+            border: 1.5px solid rgba(241, 245, 249, 1);
             border-radius: 20px;
             padding: 12px 20px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .input-group:focus-within {
             border-color: var(--brand-orange);
             background: white;
-            box-shadow: 0 0 0 4px rgba(255, 122, 26, 0.1);
+            box-shadow: 0 10px 20px -5px rgba(255, 122, 26, 0.1);
         }
-
-        .input-group label {
-            display: block;
-            font-size: 10px;
-            font-weight: 800;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 2px;
-        }
-
-        .input-group input, .input-group select {
-            width: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .page-section { display: none; width: 100%; }
-        .page-section.active { display: block; }
-
-        .loader-spin {
-            border: 2px solid #fff;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .btn-primary {
             background: var(--brand-orange);
             color: white;
             padding: 18px;
-            border-radius: 24px;
+            border-radius: 20px;
             font-weight: 700;
-            transition: transform 0.2s;
             box-shadow: 0 10px 20px -5px rgba(255, 122, 26, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.2s;
         }
 
-        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:active { transform: scale(0.96); opacity: 0.9; }
 
-        .btn-primary:disabled {
-            background: #cbd5e1;
-            box-shadow: none;
-            cursor: not-allowed;
+        .page-section { 
+            display: none; 
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .page-section.active { display: block; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .qr-box {
-            background: white;
-            padding: 8px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            width: fit-content;
+        /* Sembunyikan elemen dekoratif di layar sangat kecil agar rapi */
+        @media (max-width: 380px) {
+            h1 { font-size: 1.875rem !important; }
+            .logo-container { height: 36px; margin-bottom: 20px; }
         }
-
-        /* Toast Animation */
-        @keyframes slideInUp {
-            from { transform: translate(-50%, 100%); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
-        .animate-toast { animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-10">
+    <div class="bg-mesh"></div>
+    <div class="mobile-glow lg:hidden"></div>
 
     <div class="main-card">
-        <!-- LEFT CONTENT -->
+        <!-- LEFT PANEL (Formulir) -->
         <div class="left-panel">
             
             <!-- PAGE: LOGIN -->
             <div id="login-page" class="page-section active">
-                <div class="mb-10">
-                    <img src="https://lh3.googleusercontent.com/d/1jMrmCABKhr0PWxsEap_Y8zO0WV7kUXOx" class="h-10 mb-8" alt="Logo">
-                    <h1 class="text-4xl font-extrabold tracking-tight">Masuk</h1>
+                <div class="mb-8 lg:mb-12">
+                    <div class="logo-container">
+                        <img src="https://lh3.googleusercontent.com/d/1jMrmCABKhr0PWxsEap_Y8zO0WV7kUXOx" 
+                             class="logo-img" 
+                             alt="Logo UPT PSDA" 
+                             onload="this.classList.add('loaded'); this.parentElement.style.background='transparent'">
+                    </div>
+                    <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900">Selamat Datang</h1>
+                    <p class="text-slate-500 mt-2 font-medium text-sm sm:text-base">Masuk untuk memulai presensi harian Anda.</p>
                 </div>
 
-                <form id="login-form" class="space-y-4">
+                <form id="login-form" class="space-y-4 sm:space-y-5">
                     <div class="input-group">
-                        <label>ID / No HP</label>
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">ID Pegawai</label>
                         <div class="flex items-center gap-3">
-                            <span class="text-slate-400">@</span>
-                            <input type="text" id="login-id" placeholder="Masukkan ID anda" required>
+                            <i data-lucide="user" class="w-5 h-5 text-slate-400"></i>
+                            <input type="text" id="login-id" placeholder="Contoh: UPT-2403-123" required class="w-full outline-none bg-transparent font-semibold">
                         </div>
                     </div>
                     <div class="input-group">
-                        <label>Kata Sandi</label>
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Kata Sandi</label>
                         <div class="flex items-center justify-between">
-                            <input type="password" id="login-password" placeholder="••••••••" required>
-                            <button type="button" onclick="navigateTo('forgot')" class="text-[10px] font-bold text-orange-500">LUPA?</button>
+                            <div class="flex items-center gap-3 w-full">
+                                <i data-lucide="lock" class="w-5 h-5 text-slate-400"></i>
+                                <input type="password" id="login-password" placeholder="••••••••" required class="w-full outline-none bg-transparent font-semibold">
+                            </div>
+                            <button type="button" onclick="navigateTo('forgot')" class="text-[10px] font-extrabold text-orange-500 whitespace-nowrap ml-2">LUPA?</button>
                         </div>
                     </div>
                     
-                    <div class="flex gap-3 pt-4">
-                        <button type="submit" class="flex-1 btn-primary">Masuk</button>
-                        <button type="button" onclick="toggleScanner(true)" class="bg-slate-100 p-5 rounded-3xl hover:bg-slate-200 transition-colors">
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                        <button type="submit" class="flex-1 btn-primary order-1 sm:order-none">
+                            <span>Masuk Sekarang</span>
+                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                        <button type="button" onclick="toggleScanner(true)" class="bg-white/50 border border-slate-200 p-4 rounded-2xl hover:bg-white transition-all flex items-center justify-center order-2">
                             <i data-lucide="qr-code" class="text-slate-600"></i>
                         </button>
                     </div>
                 </form>
 
-                <div class="mt-12 text-center">
-                    <p class="text-sm text-slate-400">Belum punya akun? 
-                        <button onclick="navigateTo('register')" class="text-orange-500 font-bold hover:underline">Daftar Baru</button>
+                <div class="mt-12 text-center border-t border-slate-100 pt-6">
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Belum memiliki akun? 
+                        <button onclick="navigateTo('register')" class="text-orange-500 font-bold hover:underline">Daftar Akun Baru</button>
                     </p>
                 </div>
             </div>
 
             <!-- PAGE: REGISTER -->
             <div id="register-page" class="page-section">
-                <button onclick="navigateTo('login')" class="mb-6 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-black transition-colors">
-                    <i data-lucide="chevron-left" class="w-4 h-4"></i> Kembali ke Login
+                <button onclick="navigateTo('login')" class="mb-6 flex items-center gap-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i> Kembali
                 </button>
 
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
                     <div>
-                        <h1 class="text-3xl font-extrabold">Pendaftaran</h1>
-                        <p class="text-slate-400 text-sm mt-1">Lengkapi data profil Anda.</p>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Pendaftaran</h1>
+                        <p class="text-slate-500 text-xs font-medium mt-1">Gunakan data asli sesuai SK Penempatan.</p>
                     </div>
-                    <div class="flex flex-col items-end">
-                        <div class="qr-box" id="qrcode-reg"></div>
-                        <span id="reg-id-text" class="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-tighter">GENERATING...</span>
+                    <div class="flex flex-row items-center gap-4 bg-white/50 p-3 rounded-2xl border border-white/80">
+                        <div class="qr-box scale-75 origin-left" id="qrcode-reg"></div>
+                        <span id="reg-id-text" class="text-[10px] font-black text-orange-600 uppercase">Generating...</span>
                     </div>
                 </div>
 
                 <form id="register-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="md:col-span-2 flex justify-center mb-2">
-                        <div class="relative group">
+                        <div class="relative">
                             <input type="file" id="foto-input" class="hidden" accept="image/*">
-                            <label for="foto-input" id="foto-label" class="w-24 h-24 rounded-full border-4 border-white shadow-xl bg-slate-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:border-orange-200 transition-all">
-                                <i data-lucide="camera" class="text-slate-300"></i>
-                                <span class="text-[8px] font-bold text-slate-400 mt-1 uppercase">Profil</span>
+                            <label for="foto-input" id="foto-label" class="w-24 h-24 rounded-3xl border-2 border-dashed border-slate-300 bg-white/40 flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:border-orange-500 transition-all">
+                                <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                                <span class="text-[8px] font-bold text-slate-400 mt-1 uppercase">Pas Foto</span>
                             </label>
                         </div>
                     </div>
 
                     <div class="input-group">
-                        <label>Nama Lengkap</label>
-                        <input type="text" id="reg-nama" placeholder="Nama sesuai KTP" required>
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Nama Lengkap</label>
+                        <input type="text" id="reg-nama" placeholder="Nama Lengkap" required>
                     </div>
                     <div class="input-group">
-                        <label>Alamat Email</label>
-                        <input type="email" id="reg-email" placeholder="nama@email.com" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Nomor Whatsapp</label>
-                        <input type="text" id="reg-wa" placeholder="0812xxxx" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Jabatan</label>
-                        <select id="reg-jabatan" required>
-                            <option value="">Pilih Jabatan</option>
-                            <option value="Koordinator Lapangan">Koordinator Lapangan</option>
-                            <option value="Petugas Pintu Air">Petugas Pintu Air</option>
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Jabatan</label>
+                        <select id="reg-jabatan" required class="cursor-pointer">
+                            <option value="">Pilih...</option>
+                            <option value="Koordinator Lapangan">Korlap</option>
+                            <option value="Petugas Pintu Air">PPA</option>
                             <option value="Pekarya">Pekarya</option>
+                            <option value="Staf">Staf</option>
                         </select>
                     </div>
                     <div class="input-group md:col-span-2">
-                        <label>Kata Sandi</label>
-                        <input type="password" id="reg-pass" placeholder="••••••••" required>
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Nomor WhatsApp</label>
+                        <input type="tel" id="reg-wa" placeholder="0812xxxxxxxx" required>
                     </div>
 
                     <div class="md:col-span-2 pt-2">
-                        <button type="submit" id="reg-submit-btn" class="w-full btn-primary flex items-center justify-center gap-3">
+                        <button type="submit" id="reg-submit-btn" class="w-full btn-primary">
                             <span id="reg-btn-text">Daftar Akun</span>
                             <div id="reg-loader" class="loader-spin hidden"></div>
                         </button>
@@ -258,109 +292,120 @@
             </div>
 
             <!-- PAGE: FORGOT -->
-            <div id="forgot-page" class="page-section text-center py-10">
-                <div class="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i data-lucide="key-round" size="32"></i>
+            <div id="forgot-page" class="page-section text-center py-10 sm:py-16">
+                <div class="w-20 h-20 bg-orange-100 text-orange-600 rounded-[28px] flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="help-circle" size="40"></i>
                 </div>
-                <h2 class="text-2xl font-bold mb-2">Lupa Kata Sandi?</h2>
-                <p class="text-slate-500 text-sm mb-8">Hubungi Admin UPT untuk mereset kata sandi Anda melalui Whatsapp.</p>
-                <button onclick="navigateTo('login')" class="text-orange-500 font-bold">Kembali Ke Login</button>
+                <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Hubungi Admin</h2>
+                <p class="text-slate-500 text-xs sm:text-sm max-w-[250px] mx-auto mb-8 font-medium leading-relaxed">Verifikasi identitas diperlukan untuk mereset kata sandi Anda.</p>
+                <div class="flex flex-col gap-3 max-w-xs mx-auto">
+                    <a href="https://wa.me/628123456789" class="btn-primary">
+                        <i data-lucide="message-circle" class="w-5 h-5"></i>
+                        <span>WhatsApp Admin</span>
+                    </a>
+                    <button onclick="navigateTo('login')" class="text-slate-400 font-bold text-xs hover:text-slate-900">Kembali</button>
+                </div>
             </div>
         </div>
 
-        <!-- RIGHT PANEL -->
+        <!-- RIGHT PANEL (Desktop Visual) -->
         <div class="right-panel">
             <div class="relative z-10">
-                <div class="bg-white/90 backdrop-blur inline-block px-4 py-2 rounded-2xl shadow-sm mb-8">
-                    <p class="text-[10px] font-bold text-orange-500 uppercase tracking-tighter">Live Presence</p>
+                <div class="bg-white/60 backdrop-blur inline-flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm mb-10 border border-white/50">
+                    <div class="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>
+                    <p class="text-[10px] font-black text-orange-600 uppercase tracking-widest">Aplikasi Presensi UPT PSDA</p>
                 </div>
-                <h2 id="display-day" class="text-6xl font-light text-slate-800">Hari</h2>
-                <h2 id="display-date" class="text-6xl font-black text-slate-400 opacity-30">Tanggal</h2>
                 
-                <div class="mt-12 border-l-4 border-orange-500 pl-6">
-                    <p id="display-time" class="text-3xl font-bold text-slate-800 tracking-tighter">00:00:00 WIB</p>
-                    <p class="text-slate-500 text-sm">Lokasi: Bondowoso</p>
+                <h2 id="display-day" class="text-6xl font-extrabold text-slate-900 leading-none">Hari</h2>
+                <h2 id="display-date" class="text-5xl font-black text-slate-500 opacity-20 mt-1 mb-10">Tanggal</h2>
+                
+                <div class="p-8 bg-white/30 backdrop-blur-md rounded-[32px] border border-white/50 shadow-xl inline-block w-full max-w-sm">
+                    <p id="display-time" class="text-4xl font-black text-slate-900 tracking-tighter mb-1">00:00:00</p>
+                    <p class="text-orange-600 font-bold text-xs uppercase tracking-widest">Waktu Indonesia Barat</p>
                 </div>
             </div>
             <div class="orange-blob"></div>
         </div>
     </div>
 
-    <!-- SCANNER MODAL -->
-    <div id="scan-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-6">
-        <div class="bg-white w-full max-w-sm rounded-[40px] p-10 text-center">
-            <div class="relative w-48 h-48 mx-auto mb-8 border-4 border-orange-500 rounded-3xl flex items-center justify-center overflow-hidden">
-                <i data-lucide="scan" size="64" class="text-orange-500 opacity-20"></i>
-                <div class="absolute top-0 w-full h-1 bg-orange-500 animate-[bounce_2s_infinite]"></div>
+    <!-- MODAL SCANNER -->
+    <div id="scan-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center z-50 p-6">
+        <div class="bg-white w-full max-w-xs rounded-[40px] p-8 text-center">
+            <div class="relative w-40 h-40 mx-auto mb-8 border-4 border-orange-500/20 rounded-3xl flex items-center justify-center overflow-hidden">
+                <i data-lucide="maximize" size="48" class="text-orange-500 animate-pulse"></i>
+                <div class="absolute inset-x-0 h-0.5 bg-orange-500 shadow-[0_0_10px_#ff7a1a] animate-scan"></div>
             </div>
-            <h3 class="text-xl font-bold mb-2">Scan Login</h3>
-            <p class="text-slate-500 text-sm mb-8">Fitur login melalui kamera sedang diproses.</p>
-            <button onclick="toggleScanner(false)" class="w-full py-4 bg-slate-100 rounded-2xl font-bold">Tutup</button>
+            <h3 class="text-xl font-black text-slate-900 mb-6">Scan QR Anda</h3>
+            <button onclick="toggleScanner(false)" class="w-full py-4 bg-slate-100 text-slate-900 rounded-2xl font-bold text-sm">Tutup Kamera</button>
         </div>
     </div>
 
+    <style>
+        .animate-scan {
+            animation: scan-move 2s infinite ease-in-out;
+        }
+        @keyframes scan-move {
+            0%, 100% { top: 10%; }
+            50% { top: 90%; }
+        }
+        .loader-spin {
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid #fff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+
     <script>
-        // URL SCRIPT GOOGLE APPS SCRIPT
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwRp9NOKnyIBWX0yPAQe5oiGkoYIiL13bRvWRcaJWwSUaTknSIJ5RlI2hvzE4MNL2VHww/exec"; 
         
         let currentId = "";
         let base64Foto = "";
 
+        // Pemuatan Icon Lucide
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             updateClock();
             setInterval(updateClock, 1000);
+            
+            // Trigger Fade-in Logo jika sudah cached
+            const logo = document.querySelector('.logo-img');
+            if(logo.complete) {
+                logo.classList.add('loaded');
+                logo.parentElement.style.background = 'transparent';
+            }
         });
 
         function updateClock() {
             const now = new Date();
             const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-            document.getElementById('display-day').innerText = days[now.getDay()];
-            document.getElementById('display-date').innerText = `${now.getDate()} ${months[now.getMonth()]}`;
-            document.getElementById('display-time').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + " WIB";
-        }
-
-        function showToast(message, type = 'success') {
-            const oldToast = document.getElementById('custom-toast');
-            if (oldToast) oldToast.remove();
-
-            const toast = document.createElement('div');
-            toast.id = 'custom-toast';
-            toast.className = `fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-toast transition-all
-                ${type === 'success' ? 'bg-orange-600 text-white' : 'bg-red-600 text-white'}`;
             
-            const icon = type === 'success' ? 'check-circle' : 'alert-circle';
-            toast.innerHTML = `
-                <i data-lucide="${icon}" class="w-5 h-5"></i>
-                <span class="font-bold text-sm tracking-tight">${message}</span>
-            `;
-            
-            document.body.appendChild(toast);
-            lucide.createIcons();
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translate(-50%, 20px)';
-                setTimeout(() => toast.remove(), 500);
-            }, 4000);
+            if(document.getElementById('display-day')) {
+                document.getElementById('display-day').innerText = days[now.getDay()];
+                document.getElementById('display-date').innerText = `${now.getDate()} ${months[now.getMonth()]}`;
+                document.getElementById('display-time').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+            }
         }
 
         function navigateTo(pageId) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.getElementById(`${pageId}-page`).classList.add('active');
             if(pageId === 'register') generateId();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function generateId() {
             const date = new Date();
-            const yearMonthDay = date.getFullYear().toString().substr(-2) + (date.getMonth()+1).toString().padStart(2, '0') + date.getDate().toString().padStart(2, '0');
-            currentId = "UPT-" + yearMonthDay + "-" + Math.floor(100 + Math.random() * 899);
-            
+            const yearMonth = date.getFullYear().toString().substr(-2) + (date.getMonth()+1).toString().padStart(2, '0');
+            currentId = "UPT-" + yearMonth + "-" + Math.floor(100 + Math.random() * 899);
             document.getElementById('reg-id-text').innerText = currentId;
             const container = document.getElementById('qrcode-reg');
             container.innerHTML = "";
-            new QRCode(container, { text: currentId, width: 80, height: 80, colorDark: "#1e293b" });
+            new QRCode(container, { text: currentId, width: 64, height: 64, colorDark: "#ff7a1a" });
         }
 
         function toggleScanner(show) {
@@ -370,15 +415,10 @@
         document.getElementById('foto-input').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                if (file.size > 2 * 1024 * 1024) {
-                    showToast("Foto terlalu besar (Maks 2MB)", "error");
-                    this.value = "";
-                    return;
-                }
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     base64Foto = reader.result;
-                    document.getElementById('foto-label').innerHTML = `<img src="${base64Foto}" class="w-full h-full object-cover">`;
+                    document.getElementById('foto-label').innerHTML = `<img src="${base64Foto}" class="w-full h-full object-cover rounded-2xl">`;
                 };
                 reader.readAsDataURL(file);
             }
@@ -386,12 +426,6 @@
 
         document.getElementById('register-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            if (!base64Foto) {
-                showToast("Pas Foto Profil belum diunggah", "error");
-                return;
-            }
-
             const btn = document.getElementById('reg-submit-btn');
             const loader = document.getElementById('reg-loader');
             const btnText = document.getElementById('reg-btn-text');
@@ -404,48 +438,26 @@
                 action: 'register',
                 id_user: currentId,
                 nama: document.getElementById('reg-nama').value,
-                email: document.getElementById('reg-email').value,
                 wa: document.getElementById('reg-wa').value,
                 jabatan: document.getElementById('reg-jabatan').value,
-                password: document.getElementById('reg-pass').value,
                 foto: base64Foto
             };
 
             try {
-                // Gunakan mode no-cors jika mengalami kendala CORS, namun JSON.parse akan gagal.
-                // Pendekatan terbaik adalah mengirim sebagai form-data atau teks mentah.
-                const response = await fetch(SCRIPT_URL, {
+                await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Menangani batasan CORS Google Script
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'no-cors',
                     body: JSON.stringify(payload)
                 });
-
-                // Karena no-cors tidak bisa membaca body response, kita asumsikan sukses jika fetch tidak error
-                showToast("Pendaftaran Terkirim! ID Anda: " + currentId, "success");
-                
-                setTimeout(() => {
-                    navigateTo('login');
-                    this.reset();
-                    base64Foto = "";
-                    document.getElementById('foto-label').innerHTML = `<i data-lucide="camera" class="text-slate-300"></i><span class="text-[8px] font-bold text-slate-400 mt-1 uppercase">Profil</span>`;
-                    lucide.createIcons();
-                }, 2500);
-
+                alert("Pendaftaran Berhasil!");
+                navigateTo('login');
             } catch (err) {
-                console.error("Error:", err);
-                showToast("Gagal terhubung ke server. Cek koneksi Anda.", "error");
+                alert("Terjadi kesalahan koneksi.");
             } finally {
                 btn.disabled = false;
                 loader.classList.add('hidden');
                 btnText.innerText = "Daftar Akun";
             }
-        });
-
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            showToast("Sistem sedang melakukan sinkronisasi database.", "error");
         });
     </script>
 </body>
