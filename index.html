@@ -3,239 +3,395 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPT PSDA Presence</title>
-    <!-- Tailwind CSS untuk Styling -->
+    <title>UPT PSDA Presence - Professional</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel untuk kompilasi JSX di Browser -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/lucide-react@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); }
-        .animate-spin-slow { animation: spin 8s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        :root { --primary: #f97316; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fdf8f4; color: #1e293b; overflow-x: hidden; }
+        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.6); }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .custom-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='C19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.5em 1.5em;
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #f97316;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-[#f4f1ee]">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, memo } = React;
         
-        /** * Perbaikan Error: lucideReact is not defined.
-         * Di browser via CDN, Lucide React tersedia di window.lucide atau window.LucideReact
-         */
-        const Icons = window.lucide || {};
-        const { 
-            Home, Camera, Calendar, UserPlus, LogOut, MapPin, 
-            Mic, Settings, FileText, Menu, X, CheckCircle2, 
-            Clock, AlertCircle, Scan, Users 
-        } = Icons;
-
-        // --- KONFIGURASI ---
         const LOGO_URL = "https://lh3.googleusercontent.com/d/1jMrmCABKhr0PWxsEap_Y8zO0WV7kUXOx";
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwRp9NOKnyIBWX0yPAQe5oiGkoYIiL13bRvWRcaJWwSUaTknSIJ5RlI2hvzE4MNL2VHww/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwRp9NOKnyIBWX0yPAQe5oiGkoYIiL13bRvWRcaJWwSUaTknSIJ5RlI2hvzE4MNL2VHww/exec";
 
-        const App = () => {
-            const [currentPage, setCurrentPage] = useState('login');
-            const [user, setUser] = useState(null);
-            const [loading, setLoading] = useState(false);
-            const [sidebarOpen, setSidebarOpen] = useState(false);
-            const [notification, setNotification] = useState(null);
+        // Komponen Icon yang diperbaiki untuk Lucide
+        const LucideIcon = ({ name, size = 20, className = "" }) => {
+            const iconRef = useRef(null);
 
-            const [loginData, setLoginData] = useState({ identifier: '', password: '' });
-            const [attendanceStep, setAttendanceStep] = useState(1);
-            const [presenceData, setPresenceData] = useState({
-                status: '', location: null, keterangan: '', photoSelfie: null, photoWork: null
-            });
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [name]);
 
-            const demoUser = {
-                ID_User: "U-001",
-                Nama_Lengkap: "Admin Demo",
-                Jabatan: "Korlap",
-                Wilayah: "Bondowoso",
-                Foto_Profil: LOGO_URL
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        const FormInput = memo(({ label, value, onChange, type = "text", placeholder = "", name, required = false }) => (
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 focus-within:border-orange-500 transition-all shadow-sm group">
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1 group-focus-within:text-orange-500 transition-colors">{label}</label>
+                <input 
+                    name={name}
+                    type={type} 
+                    className="w-full outline-none font-semibold text-slate-700 bg-transparent text-base" 
+                    value={value} 
+                    onChange={onChange} 
+                    placeholder={placeholder}
+                    autoComplete="off"
+                    required={required}
+                />
+            </div>
+        ));
+
+        const LoginPage = ({ onNavigate, onLogin, loading }) => (
+            <div className="min-h-screen flex items-center justify-center p-4 md:p-8">
+                <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 glass-card rounded-[40px] md:rounded-[60px] shadow-2xl overflow-hidden">
+                    <div className="p-8 lg:p-20 flex flex-col justify-center bg-white/40">
+                        <div className="fade-in">
+                            <div className="flex items-center gap-3 mb-10">
+                                <img src={LOGO_URL} className="h-10" alt="Logo" />
+                                <div className="h-8 w-[1px] bg-slate-200"></div>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">UPT PSDA<br/>WS Sampean Setail</span>
+                            </div>
+                            <h1 className="text-5xl font-black text-slate-900 mb-2 tracking-tight">Masuk</h1>
+                            <p className="text-slate-500 mb-10 font-medium">Gunakan akun terdaftar atau scan QR presensi.</p>
+                            
+                            <form onSubmit={onLogin} className="space-y-4">
+                                <div className="bg-white border border-slate-200 rounded-3xl p-5 flex items-center gap-4 focus-within:border-orange-500 transition-all shadow-sm">
+                                    <div className="text-slate-400 bg-slate-50 p-2 rounded-xl"><LucideIcon name="user" size={18} /></div>
+                                    <input type="text" placeholder="ID Pegawai / Email" className="bg-transparent w-full outline-none font-bold text-slate-700" required />
+                                </div>
+                                <div className="relative">
+                                    <div className="bg-white border border-slate-200 rounded-3xl p-5 flex items-center gap-4 focus-within:border-orange-500 transition-all shadow-sm">
+                                        <div className="text-slate-400 bg-slate-50 p-2 rounded-xl"><LucideIcon name="lock" size={18} /></div>
+                                        <input type="password" placeholder="Kata Sandi" className="bg-transparent w-full outline-none font-bold text-slate-700" required />
+                                    </div>
+                                    <button type="button" className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-bold text-orange-500 uppercase tracking-widest hover:text-orange-600">
+                                        Lupa?
+                                    </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-4 gap-3 mt-6">
+                                    <button disabled={loading} className="col-span-3 bg-slate-900 text-white py-5 rounded-[28px] font-black text-lg flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl active:scale-95 disabled:opacity-70">
+                                        {loading ? <div className="loader"></div> : "Masuk Sekarang"}
+                                    </button>
+                                    <button type="button" className="col-span-1 bg-white border-2 border-slate-900 text-slate-900 rounded-[28px] flex items-center justify-center hover:bg-slate-50 transition-all shadow-md active:scale-95 group">
+                                        <LucideIcon name="qr-code" size={24} className="group-hover:scale-110 transition-transform"/>
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <button onClick={() => onNavigate('register')} className="w-full mt-8 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-orange-600 transition-colors text-center">
+                                Belum punya akun? <span className="underline decoration-orange-300 decoration-2">Daftar Sekarang</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div className="hidden md:flex bg-gradient-to-br from-[#fff7ed] via-[#fff1e2] to-white p-16 flex-col justify-between relative overflow-hidden">
+                         <div className="relative z-10">
+                            <h3 className="text-7xl font-light text-slate-800 tracking-tighter">Kamis</h3>
+                            <h3 className="text-7xl font-black text-slate-400/30 -mt-2">26 Mar</h3>
+                            <div className="mt-12 space-y-2">
+                                <p className="text-3xl font-black text-slate-800">08:00 WIB</p>
+                                <p className="text-slate-500 font-bold text-lg">Jl. PB Sudirman 12B, Bondowoso</p>
+                            </div>
+                         </div>
+                         <div className="relative z-10 self-end">
+                            <div className="bg-orange-500 w-64 h-64 rounded-full flex items-center justify-center text-white shadow-2xl shadow-orange-200">
+                                <div className="text-center">
+                                    <LucideIcon name="shield-check" size={60} className="mx-auto mb-2 opacity-80" />
+                                    <p className="font-black uppercase tracking-widest text-xs">Sistem Aktif</p>
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const RegisterPage = ({ onNavigate, onRegister, loading, form, setForm }) => {
+            const qrRef = useRef(null);
+            const fileInputRef = useRef(null);
+            const [showCustomJabatan, setShowCustomJabatan] = useState(form.jabatan === 'Isian manual');
+            const [previewUrl, setPreviewUrl] = useState(null);
+            
+            useEffect(() => {
+                if (qrRef.current) {
+                    qrRef.current.innerHTML = "";
+                    new QRCode(qrRef.current, { text: "UPT-PRO-99", width: 80, height: 80, colorDark : "#1e293b", colorLight : "#ffffff" });
+                }
+                if (window.lucide) window.lucide.createIcons();
+            }, []);
+
+            const handleChange = (e) => {
+                const { name, value } = e.target;
+                if (name === 'jabatan') {
+                    setShowCustomJabatan(value === 'Isian manual');
+                }
+                setForm(prev => ({ ...prev, [name]: value }));
             };
 
-            const showNotif = (msg, type = 'success') => {
-                setNotification({ msg, type });
-                setTimeout(() => setNotification(null), 3000);
+            const handleFileClick = () => {
+                fileInputRef.current?.click();
             };
 
-            const handleLogin = (e) => {
-                e.preventDefault();
-                setLoading(true);
-                setTimeout(() => {
-                    if (loginData.identifier === 'admin' && loginData.password === '123') {
-                        setUser(demoUser);
-                        setCurrentPage('dashboard');
-                    } else {
-                        showNotif("Login gagal. Gunakan admin/123", "error");
-                    }
-                    setLoading(false);
-                }, 1000);
-            };
-
-            const startPresence = () => {
-                setLoading(true);
-                if ("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                        setPresenceData(prev => ({
-                            ...prev,
-                            location: { lat: pos.coords.latitude, lng: pos.coords.longitude }
-                        }));
-                        setCurrentPage('presence');
-                        setAttendanceStep(1);
-                        setLoading(false);
-                    }, () => {
-                        showNotif("GPS Error: Aktifkan Lokasi", "error");
-                        setLoading(false);
-                    });
+            const handleFileChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setPreviewUrl(reader.result);
+                        setForm(prev => ({ ...prev, fotoBase64: reader.result }));
+                    };
+                    reader.readAsDataURL(file);
                 }
             };
 
-            // UI Elements
-            const Sidebar = () => (
-                <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-2xl transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 ease-in-out`}>
-                    <div className="p-6 flex flex-col h-full">
-                        <div className="flex items-center gap-3 mb-10">
-                            <img src={LOGO_URL} className="w-10 h-10 object-contain" />
-                            <span className="font-bold text-gray-800 text-lg">UPT PSDA</span>
-                        </div>
-                        <nav className="flex-1 space-y-2">
-                            <MenuLink icon={Home ? <Home /> : <span>H</span>} label="Dashboard" active={currentPage === 'dashboard'} onClick={() => setCurrentPage('dashboard')} />
-                            <MenuLink icon={Camera ? <Camera /> : <span>C</span>} label="Presensi" active={currentPage === 'presence'} onClick={startPresence} />
-                            <MenuLink icon={UserPlus ? <UserPlus /> : <span>U</span>} label="Pendaftaran" active={currentPage === 'register'} onClick={() => setCurrentPage('register')} />
-                            <MenuLink icon={Calendar ? <Calendar /> : <span>K</span>} label="Kalender" active={currentPage === 'calendar'} onClick={() => setCurrentPage('calendar')} />
-                        </nav>
-                        <button onClick={() => {setUser(null); setCurrentPage('login');}} className="mt-auto flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                            {LogOut && <LogOut size={20} />} <span className="font-medium">Keluar</span>
-                        </button>
-                    </div>
-                </div>
-            );
-
-            const MenuLink = ({ icon, label, active, onClick }) => (
-                <button onClick={() => { onClick(); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all ${active ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}>
-                    {icon && React.isValidElement(icon) ? React.cloneElement(icon, { size: 20 }) : icon}
-                    <span className="font-medium">{label}</span>
-                </button>
-            );
-
-            if (currentPage === 'login') {
-                return (
-                    <div className="min-h-screen bg-[#f4f1ee] flex items-center justify-center p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 bg-white/40 backdrop-blur-xl rounded-[40px] shadow-2xl max-w-4xl w-full overflow-hidden border border-white/50">
-                            <div className="p-8 md:p-12">
-                                <img src={LOGO_URL} className="h-10 mb-12" />
-                                <h1 className="text-4xl font-light mb-8 text-gray-800">Masuk</h1>
-                                <form onSubmit={handleLogin} className="space-y-6">
-                                    <div className="bg-white/80 rounded-3xl p-4 flex items-center gap-3 border border-gray-100">
-                                        <span className="text-gray-400">@</span>
-                                        <input type="text" placeholder="ID / No HP" className="bg-transparent w-full outline-none" onChange={e => setLoginData({...loginData, identifier: e.target.value})} />
-                                    </div>
-                                    <div className="bg-white/80 rounded-3xl p-4 flex items-center gap-3 border border-gray-100">
-                                        {Clock && <Clock size={18} className="text-gray-400" />}
-                                        <input type="password" placeholder="Kata Sandi" className="bg-transparent w-full outline-none" onChange={e => setLoginData({...loginData, password: e.target.value})} />
-                                    </div>
-                                    <button type="submit" className="w-full bg-black text-white py-4 rounded-3xl font-bold hover:scale-[1.02] transition-transform">Masuk Sekarang</button>
-                                </form>
-                            </div>
-                            <div className="hidden md:flex bg-gradient-to-br from-orange-100 to-orange-200 p-12 flex-col justify-between relative">
-                                <div>
-                                    <h2 className="text-5xl font-bold text-gray-800 opacity-80">UPT PSDA</h2>
-                                    <p className="mt-4 text-gray-600">Sistem Presensi Digital Berbasis Lokasi & Foto Kerja.</p>
-                                </div>
-                                <div className="w-20 h-20 bg-orange-500 rounded-full animate-spin-slow opacity-20 absolute -right-10 top-1/2"></div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
             return (
-                <div className="min-h-screen bg-gray-50 flex">
-                    <Sidebar />
-                    <main className="flex-1 lg:ml-64 p-4 lg:p-8 pb-32">
-                        <div className="flex justify-between items-center mb-8">
+                <div className="min-h-screen flex items-center justify-center p-6 fade-in">
+                    <div className="w-full max-w-4xl glass-card rounded-[50px] shadow-2xl p-8 md:p-14 overflow-hidden relative border border-white">
+                        <button onClick={() => onNavigate('login')} className="flex items-center gap-2 text-slate-400 mb-10 font-bold text-xs uppercase tracking-widest hover:text-slate-800 transition-all">
+                            <LucideIcon name="arrow-left" size={14}/> Kembali ke Login
+                        </button>
+
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-800">Halo, {user?.Nama_Lengkap}</h2>
-                                <p className="text-gray-500">{user?.Jabatan} - {user?.Wilayah}</p>
+                                <h2 className="text-5xl font-black text-slate-900 tracking-tight">Pendaftaran</h2>
+                                <p className="text-slate-500 font-medium text-lg mt-1">Lengkapi data diri Anda secara akurat.</p>
                             </div>
-                            <img src={user?.Foto_Profil} className="w-12 h-12 rounded-2xl border-2 border-orange-200 object-cover" />
+                            <div className="bg-white p-3 rounded-[32px] shadow-xl border border-slate-100 flex flex-col items-center">
+                                <div ref={qrRef}></div>
+                                <p className="text-[9px] font-black text-slate-400 mt-2 uppercase tracking-widest">UPT-PRO-99</p>
+                            </div>
                         </div>
 
-                        {currentPage === 'dashboard' && (
+                        <form onSubmit={onRegister} className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-6">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="bg-white p-6 rounded-[32px] shadow-sm text-center">
-                                        <div className="text-green-500 mb-2 flex justify-center">{CheckCircle2 && <CheckCircle2 />}</div>
-                                        <div className="text-2xl font-bold">22</div>
-                                        <div className="text-[10px] uppercase font-bold text-gray-400">Hadir</div>
-                                    </div>
-                                    <div className="bg-white p-6 rounded-[32px] shadow-sm text-center">
-                                        <div className="text-orange-500 mb-2 flex justify-center">{Clock && <Clock />}</div>
-                                        <div className="text-2xl font-bold">2</div>
-                                        <div className="text-[10px] uppercase font-bold text-gray-400">Terlambat</div>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-                                    <ActionButton label="Presensi" icon={Camera && <Camera />} color="bg-orange-100" text="text-orange-600" onClick={startPresence} />
-                                    <ActionButton label="Agenda" icon={FileText && <FileText />} color="bg-blue-100" text="text-blue-600" onClick={() => setCurrentPage('agenda')} />
-                                </div>
-                            </div>
-                        )}
-
-                        {currentPage === 'presence' && (
-                            <div className="max-w-xl mx-auto bg-white p-8 rounded-[40px] shadow-xl">
-                                <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-                                    <span className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-sm">{attendanceStep}</span>
-                                    Langkah {attendanceStep}
-                                </h3>
-                                {attendanceStep === 1 && (
-                                    <div className="space-y-6">
-                                        <div className="h-48 bg-gray-100 rounded-3xl flex items-center justify-center">
-                                            {MapPin && <MapPin className="text-orange-500 animate-bounce" size={40} />}
+                                <div className="p-8 bg-slate-50/50 rounded-[40px] border border-slate-200 border-dashed flex flex-col items-center justify-center">
+                                    <input 
+                                        type="file" 
+                                        ref={fileInputRef} 
+                                        className="hidden" 
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                    />
+                                    <div 
+                                        onClick={handleFileClick}
+                                        className="w-32 h-32 bg-white rounded-full overflow-hidden border-4 border-white shadow-xl relative cursor-pointer ring-4 ring-orange-50 group hover:ring-orange-100 transition-all"
+                                    >
+                                        {previewUrl ? (
+                                            <img src={previewUrl} className="w-full h-full object-cover" alt="Profile" />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-slate-50">
+                                                <LucideIcon name="camera" size={40}/>
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                            <LucideIcon name="edit-2" size={20}/>
                                         </div>
-                                        <button onClick={() => setAttendanceStep(2)} className="w-full bg-black text-white py-4 rounded-3xl font-bold">Konfirmasi Lokasi</button>
                                     </div>
-                                )}
+                                    <p className="text-[10px] font-black text-slate-400 uppercase mt-4 tracking-widest">Klik untuk pilih foto</p>
+                                </div>
+                                
+                                <FormInput 
+                                    name="nama"
+                                    label="Nama Lengkap" 
+                                    value={form.nama} 
+                                    onChange={handleChange} 
+                                    placeholder="Masukkan nama sesuai KTP"
+                                    required
+                                />
+
+                                <div className="space-y-4">
+                                    <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm focus-within:border-orange-500 transition-all">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Jabatan</label>
+                                        <select 
+                                            name="jabatan"
+                                            className="w-full outline-none font-semibold bg-transparent text-slate-700 custom-select pr-8" 
+                                            value={form.jabatan} 
+                                            onChange={handleChange}
+                                            required
+                                        >
+                                            <option value="">Pilih Jabatan</option>
+                                            <option value="Koordinator Lapangan">Koordinator Lapangan</option>
+                                            <option value="Petugas Pintu Air">Petugas Pintu Air</option>
+                                            <option value="Pekarya">Pekarya</option>
+                                            <option value="Staf Pengamat">Staf Pengamat</option>
+                                            <option value="Juru O">Juru O</option>
+                                            <option value="Juru P">Juru P</option>
+                                            <option value="Isian manual">Isian manual</option>
+                                        </select>
+                                    </div>
+
+                                    {showCustomJabatan && (
+                                        <div className="fade-in">
+                                            <FormInput 
+                                                name="customJabatan"
+                                                label="Masukkan Jabatan Manual" 
+                                                value={form.customJabatan || ''} 
+                                                onChange={handleChange} 
+                                                placeholder="Ketik jabatan Anda..."
+                                                required
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        )}
-                    </main>
 
-                    {/* Notification Overlay */}
-                    {notification && (
-                        <div className={`fixed top-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-[100] text-white font-bold flex items-center gap-2 ${notification.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}>
-                            {notification.msg}
-                        </div>
-                    )}
+                            <div className="space-y-6">
+                                <FormInput 
+                                    name="email"
+                                    label="Alamat Email" 
+                                    type="email"
+                                    value={form.email} 
+                                    onChange={handleChange} 
+                                    placeholder="nama@email.com"
+                                    required
+                                />
+                                
+                                <FormInput 
+                                    name="wa"
+                                    label="Nomor WhatsApp" 
+                                    value={form.wa} 
+                                    onChange={handleChange} 
+                                    placeholder="0812xxxxxxxx"
+                                    required
+                                />
 
-                    {/* Mobile Floating Menu */}
-                    <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] glass rounded-full p-4 flex justify-around items-center shadow-2xl">
-                        <button onClick={() => setCurrentPage('dashboard')}>{Home && <Home />}</button>
-                        <button onClick={startPresence} className="bg-orange-500 p-4 rounded-full text-white -mt-12 shadow-xl">{Camera && <Camera />}</button>
-                        <button onClick={() => setSidebarOpen(true)}>{Menu && <Menu />}</button>
+                                <FormInput 
+                                    name="password"
+                                    label="Kata Sandi" 
+                                    type="password"
+                                    value={form.password} 
+                                    onChange={handleChange} 
+                                    placeholder="••••••••"
+                                    required
+                                />
+
+                                <div className="pt-4">
+                                    <button type="submit" disabled={loading} className="w-full bg-orange-500 text-white py-6 rounded-[35px] font-black text-lg shadow-2xl shadow-orange-100 hover:bg-orange-600 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
+                                        {loading ? <div className="loader"></div> : "Daftar Akun Sekarang"}
+                                    </button>
+                                    <p className="text-center text-[9px] text-slate-400 font-bold uppercase mt-6 tracking-[0.2em]">Satu akun untuk seluruh layanan UPT PSDA</p>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             );
         };
 
-        const ActionButton = ({ label, icon, color, text, onClick }) => (
-            <button onClick={onClick} className="flex flex-col items-center group">
-                <div className={`w-14 h-14 ${color} ${text} rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-sm`}>
-                    {icon}
+        const App = () => {
+            const [currentPage, setCurrentPage] = useState('login');
+            const [loading, setLoading] = useState(false);
+            
+            const [regForm, setRegForm] = useState({
+                nama: '', jabatan: '', customJabatan: '', email: '', wa: '', password: '', fotoBase64: ''
+            });
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setTimeout(() => {
+                    alert("Fitur Login sedang disiapkan untuk koneksi database.");
+                    setLoading(false);
+                }, 1000);
+            };
+
+            const handleRegister = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                
+                try {
+                    const finalJabatan = regForm.jabatan === 'Isian manual' ? regForm.customJabatan : regForm.jabatan;
+                    
+                    // Menyiapkan data untuk dikirim ke Google Sheets
+                    const formData = new FormData();
+                    formData.append('nama', regForm.nama);
+                    formData.append('jabatan', finalJabatan);
+                    formData.append('email', regForm.email);
+                    formData.append('wa', regForm.wa);
+                    formData.append('password', regForm.password);
+                    formData.append('foto', regForm.fotoBase64); // Jika Apps Script menangani base64
+                    formData.append('action', 'register');
+
+                    // Menggunakan fetch untuk mengirim data ke URL Apps Script Anda
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.status === "success") {
+                        alert(`Pendaftaran Berhasil! Silakan login.`);
+                        setCurrentPage('login');
+                    } else {
+                        alert(`Gagal: ${result.message || 'Terjadi kesalahan pada server'}`);
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    // Karena masalah CORS biasanya terjadi pada Apps Script POST, 
+                    // Kita bisa tampilkan pesan khusus jika fetch gagal secara teknis.
+                    alert("Data sedang dikirim. Harap cek Google Sheet Anda. Jika belum masuk, pastikan Apps Script sudah di-deploy sebagai 'Web App' dengan akses 'Anyone'.");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="antialiased">
+                    {currentPage === 'login' && (
+                        <LoginPage 
+                            onNavigate={setCurrentPage} 
+                            onLogin={handleLogin} 
+                            loading={loading} 
+                        />
+                    )}
+                    {currentPage === 'register' && (
+                        <RegisterPage 
+                            onNavigate={setCurrentPage} 
+                            onRegister={handleRegister} 
+                            loading={loading}
+                            form={regForm}
+                            setForm={setRegForm}
+                        />
+                    )}
                 </div>
-                <span className="text-[10px] font-bold text-gray-500 uppercase">{label}</span>
-            </button>
-        );
+            );
+        };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
