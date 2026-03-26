@@ -128,6 +128,12 @@
 
         .btn-primary:active { transform: scale(0.98); }
 
+        .btn-primary:disabled {
+            background: #cbd5e1;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
         .qr-box {
             background: white;
             padding: 8px;
@@ -135,6 +141,13 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             width: fit-content;
         }
+
+        /* Toast Animation */
+        @keyframes slideInUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .animate-toast { animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -144,7 +157,7 @@
         <div class="left-panel">
             
             <!-- PAGE: LOGIN -->
-            <div id="login-page" class="page-section active animate-in fade-in duration-500">
+            <div id="login-page" class="page-section active">
                 <div class="mb-10">
                     <img src="https://lh3.googleusercontent.com/d/1jMrmCABKhr0PWxsEap_Y8zO0WV7kUXOx" class="h-10 mb-8" alt="Logo">
                     <h1 class="text-4xl font-extrabold tracking-tight">Masuk</h1>
@@ -199,7 +212,6 @@
                 </div>
 
                 <form id="register-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Foto Section -->
                     <div class="md:col-span-2 flex justify-center mb-2">
                         <div class="relative group">
                             <input type="file" id="foto-input" class="hidden" accept="image/*">
@@ -241,7 +253,6 @@
                             <span id="reg-btn-text">Daftar Akun</span>
                             <div id="reg-loader" class="loader-spin hidden"></div>
                         </button>
-                        <p class="text-[9px] text-center text-slate-300 font-bold uppercase tracking-[0.2em] mt-4">UPT PSDA Lumajang di Bondowoso</p>
                     </div>
                 </form>
             </div>
@@ -257,7 +268,7 @@
             </div>
         </div>
 
-        <!-- RIGHT PANEL (VISUAL) -->
+        <!-- RIGHT PANEL -->
         <div class="right-panel">
             <div class="relative z-10">
                 <div class="bg-white/90 backdrop-blur inline-block px-4 py-2 rounded-2xl shadow-sm mb-8">
@@ -289,8 +300,8 @@
     </div>
 
     <script>
-        // GANTI INI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_Gv8L-fR_J_T9z1f9NqY_JpUq-G8L-fR_J_T9z1f9NqY_JpUq-G8L-fR_J_T9z1f9NqY_JpUq/exec"; 
+        // URL SCRIPT GOOGLE APPS SCRIPT
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwRp9NOKnyIBWX0yPAQe5oiGkoYIiL13bRvWRcaJWwSUaTknSIJ5RlI2hvzE4MNL2VHww/exec"; 
         
         let currentId = "";
         let base64Foto = "";
@@ -310,6 +321,31 @@
             document.getElementById('display-time').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + " WIB";
         }
 
+        function showToast(message, type = 'success') {
+            const oldToast = document.getElementById('custom-toast');
+            if (oldToast) oldToast.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'custom-toast';
+            toast.className = `fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-toast transition-all
+                ${type === 'success' ? 'bg-orange-600 text-white' : 'bg-red-600 text-white'}`;
+            
+            const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5"></i>
+                <span class="font-bold text-sm tracking-tight">${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, 20px)';
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
+        }
+
         function navigateTo(pageId) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.getElementById(`${pageId}-page`).classList.add('active');
@@ -317,7 +353,10 @@
         }
 
         function generateId() {
-            currentId = "UPT-" + Math.floor(1000 + Math.random() * 9000);
+            const date = new Date();
+            const yearMonthDay = date.getFullYear().toString().substr(-2) + (date.getMonth()+1).toString().padStart(2, '0') + date.getDate().toString().padStart(2, '0');
+            currentId = "UPT-" + yearMonthDay + "-" + Math.floor(100 + Math.random() * 899);
+            
             document.getElementById('reg-id-text').innerText = currentId;
             const container = document.getElementById('qrcode-reg');
             container.innerHTML = "";
@@ -331,6 +370,11 @@
         document.getElementById('foto-input').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                    showToast("Foto terlalu besar (Maks 2MB)", "error");
+                    this.value = "";
+                    return;
+                }
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     base64Foto = reader.result;
@@ -342,6 +386,12 @@
 
         document.getElementById('register-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            if (!base64Foto) {
+                showToast("Pas Foto Profil belum diunggah", "error");
+                return;
+            }
+
             const btn = document.getElementById('reg-submit-btn');
             const loader = document.getElementById('reg-loader');
             const btnText = document.getElementById('reg-btn-text');
@@ -350,45 +400,52 @@
             loader.classList.remove('hidden');
             btnText.innerText = "Mengirim...";
 
-            // Menyesuaikan Payload dengan urutan Kolom Sheet Anda
-            // Header: ID_User, Link_QR, Foto_Profil, Nama_Lengkap, DI, Jabatan, Wilayah, Lokasi_Penempatan, No_HP, Email, Password, ...
-            const payload = new URLSearchParams();
-            payload.append('action', 'register');
-            payload.append('id_user', currentId);
-            payload.append('qr_link', currentId); // Link QR diisi ID saja agar bisa dibaca scanner
-            payload.append('foto', base64Foto);
-            payload.append('nama', document.getElementById('reg-nama').value);
-            payload.append('di', '-'); // Belum diisi saat daftar
-            payload.append('jabatan', document.getElementById('reg-jabatan').value);
-            payload.append('wilayah', '-');
-            payload.append('lokasi', '-');
-            payload.append('wa', document.getElementById('reg-wa').value);
-            payload.append('email', document.getElementById('reg-email').value);
-            payload.append('password', document.getElementById('reg-pass').value);
+            const payload = {
+                action: 'register',
+                id_user: currentId,
+                nama: document.getElementById('reg-nama').value,
+                email: document.getElementById('reg-email').value,
+                wa: document.getElementById('reg-wa').value,
+                jabatan: document.getElementById('reg-jabatan').value,
+                password: document.getElementById('reg-pass').value,
+                foto: base64Foto
+            };
 
             try {
-                // Mengirim menggunakan mode no-cors agar tidak terblokir browser
-                await fetch(SCRIPT_URL, {
+                // Gunakan mode no-cors jika mengalami kendala CORS, namun JSON.parse akan gagal.
+                // Pendekatan terbaik adalah mengirim sebagai form-data atau teks mentah.
+                const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: payload
+                    mode: 'no-cors', // Menangani batasan CORS Google Script
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
 
-                // Karena no-cors tidak mengembalikan respon, kita asumsikan sukses jika tidak error
-                alert(`Pendaftaran Berhasil!\nID Anda: ${currentId}\nSilakan Login.`);
-                navigateTo('login');
-                this.reset();
-                document.getElementById('foto-label').innerHTML = `<i data-lucide="camera" class="text-slate-300"></i><span class="text-[8px] font-bold text-slate-400 mt-1 uppercase">Profil</span>`;
-                lucide.createIcons();
+                // Karena no-cors tidak bisa membaca body response, kita asumsikan sukses jika fetch tidak error
+                showToast("Pendaftaran Terkirim! ID Anda: " + currentId, "success");
+                
+                setTimeout(() => {
+                    navigateTo('login');
+                    this.reset();
+                    base64Foto = "";
+                    document.getElementById('foto-label').innerHTML = `<i data-lucide="camera" class="text-slate-300"></i><span class="text-[8px] font-bold text-slate-400 mt-1 uppercase">Profil</span>`;
+                    lucide.createIcons();
+                }, 2500);
+
             } catch (err) {
-                console.error(err);
-                alert("Gagal sinkronisasi ke server. Pastikan URL Script benar.");
+                console.error("Error:", err);
+                showToast("Gagal terhubung ke server. Cek koneksi Anda.", "error");
             } finally {
                 btn.disabled = false;
                 loader.classList.add('hidden');
                 btnText.innerText = "Daftar Akun";
             }
+        });
+
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showToast("Sistem sedang melakukan sinkronisasi database.", "error");
         });
     </script>
 </body>
