@@ -1,0 +1,427 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Home, 
+  Camera, 
+  Calendar, 
+  UserPlus, 
+  LogOut, 
+  MapPin, 
+  Mic, 
+  Settings, 
+  FileText, 
+  Menu, 
+  X,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Scan,
+  Users
+} from 'lucide-react';
+
+// Konfigurasi Global
+const APP_TITLE = "UPT PSDA Presence";
+const LOGO_URL = "https://lh3.googleusercontent.com/d/1jMrmCABKhr0PWxsEap_Y8zO0WV7kUXOx";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwRp9NOKnyIBWX0yPAQe5oiGkoYIiL13bRvWRcaJWwSUaTknSIJ5RlI2hvzE4MNL2VHww/exec"; // Masukkan URL Web App Apps Script Anda di sini
+
+const App = () => {
+  const [currentPage, setCurrentPage] = useState('login');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  // Form States
+  const [loginData, setLoginData] = useState({ identifier: '', password: '' });
+  const [attendanceStep, setAttendanceStep] = useState(1);
+  const [presenceData, setPresenceData] = useState({
+    status: '',
+    location: null,
+    keterangan: '',
+    photoSelfie: null,
+    photoWork: null,
+  });
+
+  // Demo User
+  const demoUser = {
+    ID_User: "U-001",
+    Nama_Lengkap: "Admin Demo",
+    Jabatan: "Korlap",
+    Wilayah: "Bondowoso",
+    Foto_Profil: LOGO_URL
+  };
+
+  const showNotif = (msg, type = 'success') => {
+    setNotification({ msg, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  // --- HANDLERS ---
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    // Simulasi Login (Nantinya fetch ke Apps Script)
+    setTimeout(() => {
+      if (loginData.identifier === 'admin' && loginData.password === '123') {
+        setUser(demoUser);
+        setCurrentPage('dashboard');
+      } else {
+        showNotif("Login gagal. Gunakan admin/123", "error");
+      }
+      setLoading(false);
+    }, 1000);
+  };
+
+  const startPresence = async () => {
+    setLoading(true);
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setPresenceData({
+          ...presenceData,
+          location: { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        });
+        setCurrentPage('presence');
+        setAttendanceStep(1);
+        setLoading(false);
+      }, (err) => {
+        showNotif("GPS Error: Pastikan lokasi aktif", "error");
+        setLoading(false);
+      });
+    }
+  };
+
+  // --- UI COMPONENTS ---
+
+  const Sidebar = () => (
+    <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-2xl transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 ease-in-out`}>
+      <div className="p-6 flex flex-col h-full">
+        <div className="flex items-center gap-3 mb-10">
+          <img src={LOGO_URL} alt="Logo" className="w-10 h-10 object-contain" />
+          <span className="font-bold text-gray-800 text-lg">UPT PSDA</span>
+        </div>
+
+        <nav className="flex-1 space-y-2">
+          <MenuLink icon={<Home size={20}/>} label="Dashboard" active={currentPage === 'dashboard'} onClick={() => setCurrentPage('dashboard')} />
+          <MenuLink icon={<Camera size={20}/>} label="Presensi" active={currentPage === 'presence'} onClick={startPresence} />
+          <MenuLink icon={<UserPlus size={20}/>} label="Pendaftaran" active={currentPage === 'register'} onClick={() => setCurrentPage('register')} />
+          <MenuLink icon={<Calendar size={20}/>} label="Kalender Kerja" active={currentPage === 'calendar'} onClick={() => setCurrentPage('calendar')} />
+          {user?.Jabatan === 'Korlap' && (
+            <MenuLink icon={<FileText size={20}/>} label="Agenda Korlap" active={currentPage === 'agenda'} onClick={() => setCurrentPage('agenda')} />
+          )}
+          <MenuLink icon={<Settings size={20}/>} label="Admin Panel" active={currentPage === 'admin'} onClick={() => setCurrentPage('admin')} />
+        </nav>
+
+        <button 
+          onClick={() => {setUser(null); setCurrentPage('login');}}
+          className="mt-auto flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"
+        >
+          <LogOut size={20} />
+          <span className="font-medium">Keluar</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  const MenuLink = ({ icon, label, active, onClick }) => (
+    <button 
+      onClick={() => { onClick(); setSidebarOpen(false); }}
+      className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all ${active ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}
+    >
+      {icon}
+      <span className="font-medium">{label}</span>
+    </button>
+  );
+
+  const BottomNav = () => (
+    <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] bg-black/90 backdrop-blur-md rounded-full px-6 py-3 flex justify-between items-center shadow-2xl z-40">
+      <button onClick={() => setCurrentPage('dashboard')} className={currentPage === 'dashboard' ? 'text-orange-400' : 'text-white'}><Home /></button>
+      <button onClick={startPresence} className="bg-orange-500 p-3 rounded-full text-white -mt-10 shadow-xl"><Camera /></button>
+      <button onClick={() => setCurrentPage('calendar')} className={currentPage === 'calendar' ? 'text-orange-400' : 'text-white'}><Calendar /></button>
+      <button onClick={() => setSidebarOpen(true)} className="text-white"><Menu /></button>
+    </div>
+  );
+
+  // --- PAGES ---
+
+  if (currentPage === 'login') {
+    return (
+      <div className="min-h-screen bg-[#f4f1ee] flex items-center justify-center p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 bg-white/40 backdrop-blur-xl rounded-[40px] shadow-2xl max-w-4xl w-full overflow-hidden border border-white/50">
+          {/* Left Side: Login Form */}
+          <div className="p-8 md:p-12">
+            <div className="flex justify-between items-center mb-12">
+              <img src={LOGO_URL} alt="Logo" className="h-10" />
+              <button className="text-gray-600 font-medium">Daftar Baru</button>
+            </div>
+            
+            <h1 className="text-4xl font-light mb-8 text-gray-800">Masuk</h1>
+            
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="bg-white/80 rounded-3xl p-4 flex items-center gap-3 border border-gray-100">
+                <span className="text-gray-400">@</span>
+                <input 
+                  type="text" 
+                  placeholder="ID, Email, atau No HP" 
+                  className="bg-transparent w-full focus:outline-none text-gray-700"
+                  value={loginData.identifier}
+                  onChange={(e) => setLoginData({...loginData, identifier: e.target.value})}
+                />
+              </div>
+              <div className="bg-white/80 rounded-3xl p-4 flex items-center gap-3 border border-gray-100">
+                <Clock size={18} className="text-gray-400" />
+                <input 
+                  type="password" 
+                  placeholder="Kata Sandi" 
+                  className="bg-transparent w-full focus:outline-none text-gray-700"
+                  value={loginData.password}
+                  onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                />
+                <button type="button" className="text-xs bg-white shadow-sm px-3 py-1 rounded-full text-gray-500">Lupa?</button>
+              </div>
+
+              <div className="flex items-center justify-between pt-4">
+                <p className="text-[10px] text-gray-400 max-w-[180px]">
+                  Gunakan data yang terdaftar sesuai dengan kartu pegawai UPT PSDA.
+                </p>
+                <button 
+                  type="submit"
+                  className="bg-black text-white p-4 rounded-full hover:scale-105 transition-transform"
+                >
+                  <Scan size={24} />
+                </button>
+              </div>
+            </form>
+
+            <div className="mt-12 text-center">
+              <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Silahkan Presensi Bertanggungjawab</p>
+            </div>
+          </div>
+
+          {/* Right Side: Visual */}
+          <div className="hidden md:block bg-gradient-to-br from-orange-100 to-orange-200 relative p-12 overflow-hidden">
+             <div className="relative z-10">
+               <h2 className="text-6xl font-bold text-gray-800 opacity-80">Kamis<br/>24 Maret</h2>
+               <p className="mt-8 text-gray-600">
+                 18:00 WIB<br/>
+                 Jl. PB Sudirman No. 12B<br/>
+                 Bondowoso
+               </p>
+             </div>
+             <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-64 h-64 bg-orange-500 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+             <div className="absolute bottom-12 left-12 flex flex-col items-center">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                  <Settings className="text-gray-800 animate-spin-slow" />
+                </div>
+                <span className="text-[10px] mt-2 font-bold text-gray-700">UPT PSDA</span>
+             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      
+      <main className="flex-1 lg:ml-64 p-4 lg:p-8 pb-32 lg:pb-8">
+        {/* Header Dashboard */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Halo, {user?.Nama_Lengkap}</h2>
+            <p className="text-gray-500">{user?.Jabatan} - {user?.Wilayah}</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-orange-200">
+            <img src={user?.Foto_Profil} alt="Profile" className="w-full h-full object-cover" />
+          </div>
+        </div>
+
+        {currentPage === 'dashboard' && (
+          <div className="space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard icon={<CheckCircle2 className="text-green-500" />} label="Hadir" value="22" />
+              <StatCard icon={<Clock className="text-orange-500" />} label="Terlambat" value="2" />
+              <StatCard icon={<AlertCircle className="text-blue-500" />} label="Ijin" value="1" />
+              <StatCard icon={<Settings className="text-purple-500" />} label="Poin" value="980" />
+            </div>
+
+            {/* Quick Actions */}
+            <h3 className="text-lg font-semibold text-gray-700">Layanan Aplikasi</h3>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+              <ActionButton label="Lapkin" color="bg-blue-100" textColor="text-blue-600" icon={<FileText />} />
+              <ActionButton label="Data User" color="bg-green-100" textColor="text-green-600" icon={<Users />} />
+              <ActionButton label="Absensi" color="bg-orange-100" textColor="text-orange-600" icon={<Camera />} />
+              <ActionButton label="Kalender" color="bg-red-100" textColor="text-red-600" icon={<Calendar />} />
+              <ActionButton label="Wilayah" color="bg-purple-100" textColor="text-purple-600" icon={<MapPin />} />
+              <ActionButton label="Admin" color="bg-gray-100" textColor="text-gray-600" icon={<Settings />} />
+            </div>
+
+            {/* Attendance Chart Mockup */}
+            <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
+              <div className="flex justify-between items-center mb-6">
+                <h4 className="font-bold">Keaktifan Mingguan</h4>
+                <select className="text-sm bg-gray-50 p-2 rounded-lg outline-none">
+                  <option>Maret 2024</option>
+                </select>
+              </div>
+              <div className="h-48 w-full bg-gray-50 rounded-2xl flex items-end justify-between p-4 gap-2">
+                {[40, 70, 45, 90, 65, 80, 50].map((h, i) => (
+                  <div key={i} className="w-full bg-orange-400 rounded-t-lg transition-all duration-1000" style={{ height: `${h}%` }}></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentPage === 'presence' && (
+          <div className="max-w-xl mx-auto space-y-6">
+            <div className="bg-white p-8 rounded-[40px] shadow-xl border border-gray-100">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                  {attendanceStep}
+                </div>
+                <h3 className="text-xl font-bold">Langkah {attendanceStep}: {
+                  attendanceStep === 1 ? 'Konfirmasi Lokasi' :
+                  attendanceStep === 2 ? 'Status & Keterangan' :
+                  'Ambil Foto Bukti'
+                }</h3>
+              </div>
+
+              {attendanceStep === 1 && (
+                <div className="space-y-6">
+                  <div className="h-48 bg-gray-100 rounded-3xl relative overflow-hidden flex items-center justify-center">
+                    <MapPin className="text-orange-500 animate-bounce" size={40} />
+                    <p className="absolute bottom-4 text-xs font-mono text-gray-500">
+                      Koordinat: {presenceData.location?.lat.toFixed(5)}, {presenceData.location?.lng.toFixed(5)}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-orange-50 rounded-2xl flex gap-3 items-center border border-orange-100">
+                    <AlertCircle className="text-orange-600" />
+                    <p className="text-xs text-orange-800 font-medium">Pastikan Anda berada di area penempatan kerja sebelum melanjutkan.</p>
+                  </div>
+                  <button 
+                    onClick={() => setAttendanceStep(2)}
+                    className="w-full bg-black text-white py-4 rounded-3xl font-bold"
+                  >
+                    Lanjutkan
+                  </button>
+                </div>
+              )}
+
+              {attendanceStep === 2 && (
+                <div className="space-y-6">
+                   <div className="grid grid-cols-2 gap-3">
+                     {['Hadir', 'Pulang', 'Sakit', 'Ijin', 'Margin Error'].map(st => (
+                       <button 
+                        key={st}
+                        onClick={() => setPresenceData({...presenceData, status: st})}
+                        className={`p-4 rounded-2xl border transition-all ${presenceData.status === st ? 'bg-orange-500 text-white border-orange-500 shadow-lg scale-[1.02]' : 'bg-white border-gray-200 text-gray-600'}`}
+                       >
+                         {st}
+                       </button>
+                     ))}
+                   </div>
+                   
+                   <div className="relative">
+                      <textarea 
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        placeholder="Keterangan (Gunakan voice jika perlu)..."
+                        value={presenceData.keterangan}
+                        onChange={(e) => setPresenceData({...presenceData, keterangan: e.target.value})}
+                      ></textarea>
+                      <button className="absolute right-4 bottom-4 w-10 h-10 bg-white shadow-md rounded-full flex items-center justify-center text-orange-500">
+                        <Mic size={18} />
+                      </button>
+                   </div>
+
+                   <button 
+                    disabled={!presenceData.status}
+                    onClick={() => setAttendanceStep(3)}
+                    className="w-full bg-black text-white py-4 rounded-3xl font-bold disabled:opacity-50"
+                  >
+                    Ambil Foto
+                  </button>
+                </div>
+              )}
+
+              {attendanceStep === 3 && (
+                <div className="space-y-6 text-center">
+                   <div className="flex gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="aspect-square bg-gray-100 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-gray-300">
+                           <Camera className="text-gray-400 mb-2" />
+                           <span className="text-[10px] uppercase font-bold text-gray-400">Selfie Live</span>
+                        </div>
+                        <button className="text-xs font-bold text-orange-600">Ambil Foto</button>
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div className="aspect-square bg-gray-100 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-gray-300">
+                           <MapPin className="text-gray-400 mb-2" />
+                           <span className="text-[10px] uppercase font-bold text-gray-400">Lokasi Kerja</span>
+                        </div>
+                        <button className="text-xs font-bold text-orange-600">Ambil Foto</button>
+                      </div>
+                   </div>
+
+                   <div className="text-left p-4 bg-gray-50 rounded-2xl text-[10px] text-gray-500 italic">
+                      * Foto akan diberikan watermark otomatis berupa Timestamp Server dan Koordinat GPS. Foto dari galeri tidak diperbolehkan.
+                   </div>
+
+                   <button 
+                    onClick={() => {
+                      showNotif("Presensi Berhasil Dikirim!");
+                      setCurrentPage('dashboard');
+                    }}
+                    className="w-full bg-green-600 text-white py-4 rounded-3xl font-bold shadow-lg"
+                  >
+                    Kirim Presensi
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Global Components */}
+      <BottomNav />
+      {notification && (
+        <div className={`fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-[100] animate-bounce flex items-center gap-2 ${notification.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+          {notification.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+          <span className="font-bold text-sm">{notification.msg}</span>
+        </div>
+      )}
+
+      {/* Overlay Sidebar for Mobile */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+    </div>
+  );
+};
+
+// Sub-components
+const StatCard = ({ icon, label, value }) => (
+  <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
+    <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mb-2">
+      {icon}
+    </div>
+    <span className="text-xl font-bold text-gray-800">{value}</span>
+    <span className="text-[10px] text-gray-400 font-bold uppercase">{label}</span>
+  </div>
+);
+
+const ActionButton = ({ label, icon, color, textColor }) => (
+  <button className="flex flex-col items-center group">
+    <div className={`w-14 h-14 ${color} ${textColor} rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform mb-2`}>
+      {icon}
+    </div>
+    <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">{label}</span>
+  </button>
+);
+
+export default App;
